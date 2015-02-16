@@ -10,34 +10,54 @@
  * Implements hook_menu().
  */
 function muut_comments_menu() {
-  $path = drupal_get_path('module', 'unilogin');
   $items = array();
 
   $items['muut-comments/auth'] = array(
     'title' => 'Muut authentication',
-    'description' => 'Authentication callback for Muut.',
+    'description' => 'Authentication callback for Muut comments.',
     'page callback' => 'muut_comments_auth_callback',
     'access callback' => 'muut_comments_access_callback',
     'delivery callback' => 'drupal_json_output'
   );
 
+  $items['admin/config/system/muut_comments'] = array(
+    'title' => 'Muut comments',
+    'description' => 'Configure Muut comments.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('muut_comments_config_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'muut_comments.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
   return $items;
 }
 
+/**
+ * Custom ajax callback for muut comments.
+ * @return @array data structure with sso data.
+ */
 function muut_comments_auth_callback() {
 
-  $apikey = '4xWbxttnBH';
-  $secretkey = 'wVa3jz7xmDhpDdNTmTM8Cf5O';
+  $apikey = variable_get('muut_comments_api_key', '');
+  $secretkey = variable_get('muut_comments_api_secret', '');
   $timestamp = time();
 
-  $data = array(
-      'user' => array(
-          "id" => "adapt-test",
-          "displayname" => "Adapt test bruger",
-          "email" => "tom+test@adapt.dk",
-          "is_admin" => false,
-      ),
-  );
+  // Data for the anonymous user.
+  $data = array('user' => array());
+
+  // TODO : make fullname field configurable.
+  if (user_is_logged_in()) {
+    $user = user_uid_optional_load();
+    $data['user'] = array(
+      "id" => $user->name,
+      "displayname" => (empty($user->field_fullname[LANGUAGE_NONE][0]['value']) ?
+        $user->name : $user->field_fullname[LANGUAGE_NONE][0]['value']),
+      "email" => $user->mail,
+      // "avatar" => '',
+      "is_admin" => false,
+    );
+  }
 
   $message = base64_encode(json_encode($data));
   $signature = sha1($secretkey . ' ' . $message . ' ' . $timestamp);
@@ -55,6 +75,10 @@ function muut_comments_auth_callback() {
 
 }
 
+/**
+ * Custom access callback
+ * @return bool Always return TRUE
+ */
 function muut_comments_access_callback() {
   return TRUE;
 }
@@ -79,14 +103,35 @@ function muut_comments_block_view($delta = '') {
 
   if ($delta == 'comments') {
 
+    $ogc = og_context();
+    $node = menu_get_object();
+    if ($node && $node->nid) {
+      $comment_id = $ogc['gid'] . ':' . $node->nid;
+    } else {
+      return;
+    }
+
+    $community_name = variable_get('muut_comments_community_name', '');
+
+    $js_settings = array(
+      'data' => array('muut_comments' => array(
+        'login_url' => $GLOBALS['base_url'] . '/user',
+        'url' => 'https://muut.com/i/' . $community_name . '/comments/' . $comment_id,
+        'show_online' => true,
+        'upload' => false
+      )),
+      'type' => 'setting'
+    );
+
     $block['content'] = array(
       '#markup' => '<div id="muut-comments"></div>',
       '#attached' => array(
         'js' => array(
-          '//cdn.muut.com/1/moot.min.js',
+          '//cdn.muut.com/1/moot.da.min.js',
           drupal_get_path('module', 'muut_comments') . '/js/muut-comments.js',
+          $js_settings
         ),
-        'css' => array(//'//cdn.muut.com/1/moot.css'
+        'css' => array(
            drupal_get_path('module', 'muut_comments') . '/css/muut.css',
         ),
       ),
