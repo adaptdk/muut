@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * @file
+ * Module file for the Muut comments module.
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function muut_comments_menu() {
+  $path = drupal_get_path('module', 'unilogin');
+  $items = array();
+
+  $items['muut-comments/auth'] = array(
+    'title' => 'Muut authentication',
+    'description' => 'Authentication callback for Muut.',
+    'page callback' => 'muut_comments_auth_callback',
+    'access callback' => 'muut_comments_access_callback',
+    'delivery callback' => 'drupal_json_output'
+  );
+
+  return $items;
+}
+
+function muut_comments_auth_callback() {
+
+  $apikey = '4xWbxttnBH';
+  $secretkey = 'wVa3jz7xmDhpDdNTmTM8Cf5O';
+  $timestamp = time();
+
+  $data = array(
+      'user' => array(
+          "id" => "adapt-test",
+          "displayname" => "Adapt test bruger",
+          "email" => "tom+test@adapt.dk",
+          "is_admin" => false,
+      ),
+  );
+
+  $message = base64_encode(json_encode($data));
+  $signature = sha1($secretkey . ' ' . $message . ' ' . $timestamp);
+
+  $result = array(
+    'api' => array(
+      'key' => $apikey,
+      'message' => $message,
+      'signature' => $signature,
+      'timestamp' => $timestamp
+    )
+  );
+
+  return $result;
+
+}
+
+function muut_comments_access_callback() {
+  return TRUE;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function muut_comments_block_info() {
+  return array(
+    'comments' => array(
+      'info' => t('Muut comments'),
+      'cache' => DRUPAL_CACHE_PER_PAGE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function muut_comments_block_view($delta = '') {
+  $block = array();
+
+  if ($delta == 'comments') {
+
+    $block['content'] = array(
+      '#markup' => '<div id="muut-comments"></div>',
+      '#attached' => array(
+        'js' => array(
+          '//cdn.muut.com/1/moot.min.js',
+          drupal_get_path('module', 'muut_comments') . '/js/muut-comments.js',
+        ),
+        'css' => array(//'//cdn.muut.com/1/moot.css'
+           drupal_get_path('module', 'muut_comments') . '/css/muut.css',
+        ),
+      ),
+    );
+  }
+
+  return $block;
+}

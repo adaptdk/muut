@@ -1,0 +1,3 @@
+name = Muut comments
+description = Enables modules to work with any entity type and to provide entities.
+core = 7.x
