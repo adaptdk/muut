@@ -5,7 +5,6 @@
  * Module file for the Muut comments module.
  */
 
-
 /**
  * Implements hook_menu().
  */
@@ -17,7 +16,7 @@ function muut_comments_menu() {
     'description' => 'Authentication callback for Muut comments.',
     'page callback' => 'muut_comments_auth_callback',
     'access callback' => 'muut_comments_access_callback',
-    'delivery callback' => 'drupal_json_output'
+    'delivery callback' => 'drupal_json_output',
   );
 
   $items['admin/config/system/muut_comments'] = array(
@@ -35,7 +34,9 @@ function muut_comments_menu() {
 
 /**
  * Custom ajax callback for muut comments.
- * @return @array data structure with sso data.
+ *
+ * @return @array
+ *   Returns data structure with sso data.
  */
 function muut_comments_auth_callback() {
 
@@ -46,16 +47,26 @@ function muut_comments_auth_callback() {
   // Data for the anonymous user.
   $data = array('user' => array());
 
-  // TODO : make fullname field configurable.
-  if (user_is_logged_in()) {
+  if (user_is_logged_in() && user_access('post muut comments')) {
     $user = user_uid_optional_load();
+
+    $displayname = $user->name;
+    // Fallback to username.
+    $displayname_field = variable_get('muut_comments_displayname_field', FALSE);
+    if ($displayname_field) {
+      $items = field_get_items('user', $user, $displayname_field);
+      if ($items) {
+        $item = array_shift($items);
+        $displayname = $item['value'];
+      }
+    }
+
     $data['user'] = array(
       "id" => $user->name,
-      "displayname" => (empty($user->field_fullname[LANGUAGE_NONE][0]['value']) ?
-        $user->name : $user->field_fullname[LANGUAGE_NONE][0]['value']),
+      "displayname" => $displayname,
       "email" => $user->mail,
       // "avatar" => '',
-      "is_admin" => false,
+      "is_admin" => FALSE,
     );
   }
 
@@ -67,8 +78,8 @@ function muut_comments_auth_callback() {
       'key' => $apikey,
       'message' => $message,
       'signature' => $signature,
-      'timestamp' => $timestamp
-    )
+      'timestamp' => $timestamp,
+    ),
   );
 
   return $result;
@@ -76,11 +87,27 @@ function muut_comments_auth_callback() {
 }
 
 /**
- * Custom access callback
- * @return bool Always return TRUE
+ * Custom access callback.
+ *
+ * @return bool
+ *   Always return TRUE
  */
 function muut_comments_access_callback() {
   return TRUE;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function muut_comments_permission() {
+  return array(
+    'post muut comments' => array(
+      'title' => t('Post Muut comments'),
+    ),
+    'administer muut comments' => array(
+      'title' => t('Administer Muut comments'),
+    ),
+  );
 }
 
 /**
@@ -103,37 +130,37 @@ function muut_comments_block_view($delta = '') {
 
   if ($delta == 'comments') {
 
+    // Todo: this should be exposed as an alter function.
     $ogc = og_context();
     $node = menu_get_object();
     if ($node && $node->nid) {
       $comment_id = $ogc['gid'] . ':' . $node->nid;
-    } else {
+    }
+    else {
       return;
     }
 
     $community_name = variable_get('muut_comments_community_name', '');
 
     $js_settings = array(
-      'data' => array('muut_comments' => array(
-        'login_url' => $GLOBALS['base_url'] . '/user',
-        'url' => 'https://muut.com/i/' . $community_name . '/comments/' . $comment_id,
-        'show_online' => true,
-        'upload' => false
-      )),
-      'type' => 'setting'
+      'data' => array(
+        'muut_comments' => array(
+          'login_url' => $GLOBALS['base_url'] . '/user',
+          'url' => 'https://muut.com/i/' . $community_name . '/comments/' . $comment_id,
+          'show_online' => TRUE,
+          'upload' => FALSE)),
+      'type' => 'setting',
     );
 
     $block['content'] = array(
       '#markup' => '<div id="muut-comments"></div>',
       '#attached' => array(
         'js' => array(
-          '//cdn.muut.com/1/moot.da.min.js',
+          array('data' => '//cdn.muut.com/1/moot.da.min.js', 'type' => 'external'),
           drupal_get_path('module', 'muut_comments') . '/js/muut-comments.js',
-          $js_settings
+          $js_settings,
         ),
-        'css' => array(
-           drupal_get_path('module', 'muut_comments') . '/css/muut.css',
-        ),
+        'css' => array(array('data' => '//cdn.muut.com/1/moot.css', 'type' => 'external')),
       ),
     );
   }
