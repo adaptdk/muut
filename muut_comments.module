@@ -11,10 +11,11 @@
 function muut_comments_menu() {
   $items = array();
 
-  $items['muut-comments/auth'] = array(
+  $items['muut-comments/auth/%'] = array(
     'title' => 'Muut authentication',
     'description' => 'Authentication callback for Muut comments.',
     'page callback' => 'muut_comments_auth_callback',
+    'page arguments' => array(2),
     'access callback' => 'muut_comments_access_callback',
     'delivery callback' => 'drupal_json_output',
   );
@@ -38,7 +39,7 @@ function muut_comments_menu() {
  * @return @array
  *   Returns data structure with sso data.
  */
-function muut_comments_auth_callback() {
+function muut_comments_auth_callback($gid) {
 
   $apikey = variable_get('muut_comments_api_key', '');
   $secretkey = variable_get('muut_comments_api_secret', '');
@@ -61,12 +62,18 @@ function muut_comments_auth_callback() {
       }
     }
 
+    // If current user has the right permission we set is_admin to TRUE.
+    $is_admin = FALSE;
+    if (muut_comments_administer_access($gid)) {
+      $is_admin = TRUE;
+    }
+
     $data['user'] = array(
       "id" => $user->name,
       "displayname" => $displayname,
       "email" => $user->mail,
       // "avatar" => '',
-      "is_admin" => FALSE,
+      "is_admin" => $is_admin,
     );
   }
 
@@ -97,6 +104,25 @@ function muut_comments_access_callback() {
 }
 
 /**
+ * Administer access function.
+ *
+ * @param integer $gid
+ *   Group id
+ *
+ *  @return boolean
+ *    Returns TRUE if current user can administer comments.
+ */
+function muut_comments_administer_access($gid) {
+  if (user_access('administer muut comments')) {
+    return TRUE;
+  }
+  if (og_user_access_entity('administer muut comments', 'node', $gid)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
  * Implements hook_permission().
  */
 function muut_comments_permission() {
@@ -111,6 +137,20 @@ function muut_comments_permission() {
 }
 
 /**
+ * Implements hook_og_permission().
+ * @return array
+ *    Array with Organic groups permissions provided by this module.
+ */
+function muut_comments_og_permission() {
+  return array(
+    'administer muut comments' => array(
+      'title' => t('Administer Muut comments in group'),
+      'description' => t("Allows user to delete comments in group.")
+    ),
+  );
+}
+
+/**
  * Implements hook_block_info().
  */
 function muut_comments_block_info() {
@@ -119,7 +159,32 @@ function muut_comments_block_info() {
       'info' => t('Muut comments'),
       'cache' => DRUPAL_CACHE_PER_PAGE,
     ),
+    'comments_count' => array(
+      'info' => t('Muut comment count'),
+      'cache' => DRUPAL_CACHE_PER_PAGE,
+    ),
   );
+}
+
+/**
+ * Comment enables status.
+ * @param  object $node
+ * @return boolean
+ */
+function muut_comments_enabled($node) {
+  $enable_fields = variable_get('muut_comments_enable_field', array());
+  $enable_field  = empty($enable_fields[$node->type]) ? FALSE : $enable_fields[$node->type];
+  $enable = FALSE;
+
+  // If no field is defined as enabling/disabling comments don't show comments.
+  if ($enable_field) {
+    $items = field_get_items('node', $node, $enable_field);
+    if ($items) {
+      $item = array_shift($items);
+      $enable = $item['value'];
+    }
+  }
+  return $enable;
 }
 
 /**
@@ -128,41 +193,68 @@ function muut_comments_block_info() {
 function muut_comments_block_view($delta = '') {
   $block = array();
 
-  if ($delta == 'comments') {
+  if ($delta == 'comments' || $delta == 'comments_count') {
 
     // Todo: this should be exposed as an alter function.
     $ogc = og_context();
     $node = menu_get_object();
-    if ($node && $node->nid) {
+    if ($node && $node->nid && muut_comments_enabled($node)) {
       $comment_id = $ogc['gid'] . ':' . $node->nid;
     }
     else {
-      return;
+      return $block;
     }
 
     $community_name = variable_get('muut_comments_community_name', '');
 
+    if ($delta == 'comments') {
+      $js_settings = array(
+        'data' => array(
+          'muut_comments' => array(
+            'login_url' => $GLOBALS['base_url'] . '/user',
+            'url' => 'https://muut.com/i/' . $community_name . '/comments/' . $comment_id,
+            'show_online' => TRUE,
+            'upload' => FALSE)),
+        'type' => 'setting',
+      );
+
+      $block['content'] = array(
+        '#markup' => '<div id="muut-comments"></div>',
+        '#attached' => array(
+          'js' => array(
+            array('data' => '//cdn.muut.com/1/moot.da.min.js', 'type' => 'external'),
+            drupal_get_path('module', 'muut_comments') . '/js/muut-comments.js',
+            $js_settings,
+          )
+        )
+      );
+
+      if (variable_get('muut_comments_css', TRUE)) {
+        $block['content']['#attached']['css'] =
+          array(array('data' => '//cdn.muut.com/1/moot.css', 'type' => 'external'));
+      }
+
+  }
+  else {
+
     $js_settings = array(
       'data' => array(
-        'muut_comments' => array(
-          'login_url' => $GLOBALS['base_url'] . '/user',
-          'url' => 'https://muut.com/i/' . $community_name . '/comments/' . $comment_id,
-          'show_online' => TRUE,
-          'upload' => FALSE)),
+        'muut_comments_count' => array(
+          'path' => $community_name . '/comments/' . $comment_id
+        )),
       'type' => 'setting',
     );
 
     $block['content'] = array(
-      '#markup' => '<div id="muut-comments"></div>',
-      '#attached' => array(
+      '#markup' => '<div id="muut-comments-count"></div>',
+       '#attached' => array(
         'js' => array(
-          array('data' => '//cdn.muut.com/1/moot.da.min.js', 'type' => 'external'),
-          drupal_get_path('module', 'muut_comments') . '/js/muut-comments.js',
-          $js_settings,
-        ),
-        'css' => array(array('data' => '//cdn.muut.com/1/moot.css', 'type' => 'external')),
-      ),
+          drupal_get_path('module', 'muut_comments') . '/js/muut-comments-count.js',
+          $js_settings
+        )
+      )
     );
+  }
   }
 
   return $block;

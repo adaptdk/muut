@@ -44,6 +44,13 @@ function muut_comments_config_form($form, &$form_state) {
     '#required' => TRUE,
   );
 
+  $form['api']['wrapper']['muut_comments_css'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Muut default CSS'),
+    '#default_value' => variable_get('muut_comments_css', TRUE),
+    '#description' => t('Include the default CSS from Muut CDN.'),
+  );
+
   $form['fields'] = array(
     '#type' => 'fieldset',
     '#title' => t('Fields used to enable/disable comments'),
