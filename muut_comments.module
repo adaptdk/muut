@@ -234,27 +234,27 @@ function muut_comments_block_view($delta = '') {
           array(array('data' => '//cdn.muut.com/1/moot.css', 'type' => 'external'));
       }
 
-  }
-  else {
-
-    $js_settings = array(
-      'data' => array(
-        'muut_comments_count' => array(
-          'path' => $community_name . '/comments/' . $comment_id
-        )),
-      'type' => 'setting',
-    );
-
-    $block['content'] = array(
-      '#markup' => '<div id="muut-comments-count"></div>',
-       '#attached' => array(
-        'js' => array(
-          drupal_get_path('module', 'muut_comments') . '/js/muut-comments-count.js',
-          $js_settings
+    }
+    else {
+  
+      $js_settings = array(
+        'data' => array(
+          'muut_comments_count' => array(
+            'path' => $community_name . '/comments/' . $comment_id
+          )),
+        'type' => 'setting',
+      );
+  
+      $block['content'] = array(
+        '#markup' => '<div id="muut-comments-count"></div>',
+         '#attached' => array(
+          'js' => array(
+            drupal_get_path('module', 'muut_comments') . '/js/muut-comments-count.js',
+            $js_settings
+          )
         )
-      )
-    );
-  }
+      );
+    }
   }
 
   return $block;
