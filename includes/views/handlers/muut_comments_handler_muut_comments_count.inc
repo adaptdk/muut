@@ -20,10 +20,6 @@ class muut_comments_handler_muut_comments_count extends views_handler_field {
     parent::options_form($form, $form_state);
   }
 
-  function query() {
-    // do nothing -- to override the parent query.
-  }
-
   function render($data) {
 
     $node = node_load($data->nid);
