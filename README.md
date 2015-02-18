@@ -3,7 +3,7 @@
 1. Enable the module
 2. Add boolean field to content types where commenting is needed
 3. Add fullname field to users ( or use existing field )
-4. Configure the module
+4. Configure the module ( admin/config/system/muut_comments )
 5. Add blocks to the pages as needed
 6. Setup permissions
 
