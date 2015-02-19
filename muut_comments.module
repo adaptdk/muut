@@ -259,3 +259,14 @@ function muut_comments_block_view($delta = '') {
 
   return $block;
 }
+
+
+/**
+ * Implements hook_views_api().
+ */
+function muut_comments_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'muut_comments') . '/includes/views',
+  );
+}
