@@ -33,7 +33,7 @@ function muut_comments_views_handlers() {
       // The name of my handler
       'dsr_blog_handler_muut_comments_count' => array(
         // The name of the handler we are extending.
-        'parent' => 'views_handler_field',
+        'parent' => 'views_handler_field_node',
       ),
     ),
   );
