@@ -24,7 +24,7 @@ class muut_comments_handler_muut_comments_count extends views_handler_field_node
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
   }
-
+  
   function query() {
     $this->ensure_my_table();
     $this->add_additional_fields();
@@ -36,6 +36,7 @@ class muut_comments_handler_muut_comments_count extends views_handler_field_node
 
     $node = node_load($data->nid);
     $groups = og_get_entity_groups('node', $node);
+
     $comment_ids = array();
     foreach($groups['node'] as $group) {
       if ($node && $node->nid && muut_comments_enabled($node) && $group) {
