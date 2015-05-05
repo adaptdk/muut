@@ -211,7 +211,7 @@ function muut_comments_block_view($delta = '') {
       $js_settings = array(
         'data' => array(
           'muut_comments' => array(
-            'login_url' => $GLOBALS['base_url'] . '/user',
+            'login_url' => $GLOBALS['base_url'] . '/user_login_form?destination=' . current_path(),
             'url' => 'https://muut.com/i/' . $community_name . '/comments/' . $comment_id,
             'show_online' => TRUE,
             'upload' => FALSE)),
