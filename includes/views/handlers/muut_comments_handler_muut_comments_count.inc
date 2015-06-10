@@ -32,12 +32,13 @@ class muut_comments_handler_muut_comments_count extends views_handler_field {
     $groups = og_get_entity_groups('node', $node);
     
     $comment_ids = array();
-    foreach($groups['node'] as $group) {
-      if ($node && $node->nid && muut_comments_enabled($node) && $group) {
-        $comment_ids[] = $group . ':' . $node->nid;
+    if (!empty($groups['node'])) {
+      foreach($groups['node'] as $group) {
+        if ($node && $node->nid && muut_comments_enabled($node) && $group) {
+          $comment_ids[] = $group . ':' . $node->nid;
+        }
       }
     }
-
     if(!empty($comment_ids)) {
       $community_name = variable_get('muut_comments_community_name', '');
       drupal_add_js(drupal_get_path('module', 'muut_comments') . '/js/muut-comments-count.js');
