@@ -1,6 +1,7 @@
 name = Muut comments
-description = Enables modules to work with any entity type and to provide entities.
+description = Muut comment integration.
 core = 7.x
-
-
+dependencies[] = image
+features[features_api][] = api:2
+features[image][] = muut
 files[] = includes/views/handlers/muut_comments_handler_muut_comments_count.inc
