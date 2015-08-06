@@ -2,8 +2,10 @@
 
 /**
  * @file
- * Module file for the Muut comments module.
+ * Code for the Muut comments module.
  */
+
+include_once 'muut_comments.features.inc';
 
 /**
  * Implements hook_menu().
