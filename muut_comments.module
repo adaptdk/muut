@@ -68,11 +68,14 @@ function muut_comments_auth_callback($gid) {
       $is_admin = TRUE;
     }
 
+    $path = !empty($user->picture->uri) ? $user->picture->uri : variable_get('user_picture_default');
+    $avatar_url = image_style_url('muut', $path);
+
     $data['user'] = array(
       "id" => $user->name,
       "displayname" => $displayname,
       "email" => $user->mail,
-      // "avatar" => '',
+      "avatar" => $avatar_url,
       "is_admin" => $is_admin,
     );
   }
