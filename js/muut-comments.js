@@ -5,7 +5,7 @@
         var gid = Drupal.settings.ogContext.gid;
   	$.extend(moot.language, {
   	  online: "Online",
-  	  post: "Send",
+  	  post: "Kommentér",
   	  reply: "Send et svar",
   	  watch: "Følg denne side",
   	  unwatch: "Følg ikke denne side",
