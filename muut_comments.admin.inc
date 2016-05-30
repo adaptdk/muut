@@ -58,8 +58,10 @@ function muut_comments_config_form($form, &$form_state) {
   );
 
   $form['fields']['muut_comments_enable_field'] = array('#tree' => TRUE);
+  $form['fields']['muut_comments_enable_notify'] = array('#tree' => TRUE);
 
   $default_values = variable_get('muut_comments_enable_field', array());
+  $notify_values = variable_get('muut_comments_enable_notify', array());
 
   $fields_info = field_info_instances('node');
   foreach ($fields_info as $bundle => $bundle_info) {
@@ -73,8 +75,14 @@ function muut_comments_config_form($form, &$form_state) {
     $form['fields']['muut_comments_enable_field'][$bundle] = array(
       '#type' => 'select',
       '#options' => $field_names,
-      '#title' => t('Field for @bundle', array('@bundle' => $bundle)),
+      '#title' => t('Comment Field for @bundle', array('@bundle' => $bundle)),
       '#default_value' => (empty($default_values[$bundle]) ? '' : $default_values[$bundle]),
+    );
+    $form['fields']['muut_comments_enable_notify'][$bundle] = array(
+      '#type' => 'select',
+      '#options' => $field_names,
+      '#title' => t('Notify field for @bundle', array('@bundle' => $bundle)),
+      '#default_value' => (empty($notify_values[$bundle]) ? '' : $notify_values[$bundle]),
     );
   }
 
@@ -99,5 +107,20 @@ function muut_comments_config_form($form, &$form_state) {
     '#description' => t('Only textfields can be assigned as source of the displayname'),
   );
 
+  $form['muut_email'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Fields for email notification information'),
+  );
+  $form['muut_email']['muut_comments_notification_subject'] = array(
+    '#type' => 'textfield',
+    '#default_value' => empty(variable_get('muut_comments_notification_subject')) ? '' : variable_get('muut_comments_notification_subject'),
+    '#title' => t('Mail subject'),
+  );
+  $form['muut_email']['muut_comments_notification_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Mail subject'),
+    '#default_value' => empty(variable_get('muut_comments_notification_body')) ? '' : variable_get('muut_comments_notification_body'),
+    '#description' => '@authorname is replaced by Authors name <br> @nodetitle is replaced by nodes title <br> @nodelink is replace with the nodes title as a link ',
+  );
   return system_settings_form($form);
 }
