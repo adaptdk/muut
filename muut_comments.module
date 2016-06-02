@@ -38,14 +38,18 @@ function muut_comments_menu() {
     'description' => 'Callback for new Muut comments.',
     'page callback' => 'muut_comments_notify_callback',
     'access callback' => 'muut_comments_notify_access_callback',
-    'delivery callback' => 'drupal_json_output',
   );
 
   return $items;
 }
 
 function muut_comments_notify_access_callback(){
-  return TRUE;
+
+  $hash = $_SERVER['HTTP_X_MUUT_SIGNATURE'];
+  $message = file_get_contents("php://input");
+  $key = variable_get('muut_comments_webhook_secret', 'uri9p32iojfi902');
+  $signature = hash_hmac('sha1', $message, $key);
+  return $signature == $hash;
 }
 /**
  * Custom ajax callback for muut comments.
@@ -327,6 +331,7 @@ function muut_comments_notify_callback() {
       }
     }
   }
+  return drupal_json_output('OK');
 }
 
 /**

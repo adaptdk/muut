@@ -33,6 +33,15 @@ function muut_comments_config_form($form, &$form_state) {
     '#description' => t('The Muut API secret.'),
     '#required' => TRUE,
   );
+  $form['api']['muut_comments_webhook_secret'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Muut webhook shared secret'),
+    '#default_value' => variable_get('muut_comments_webhook_secret', ''),
+    '#size' => 24,
+    '#maxlength' => 24,
+    '#description' => t('The Muut webhook secret.'),
+    '#required' => TRUE,
+  );
 
   $form['api']['wrapper']['muut_comments_community_name'] = array(
     '#type' => 'textfield',
