@@ -65,23 +65,27 @@ function muut_comments_config_form($form, &$form_state) {
 
   $fields_info = field_info_instances('node');
   foreach ($fields_info as $bundle => $bundle_info) {
-    $field_names = array('' => t('None'));
+    $boolean_names = array('' => t('None'));
+    $text_names = array('' => t('None'));
     foreach ($bundle_info as $field_name => $info) {
       $field_info = field_info_field($field_name);
       if ($field_info['type'] == 'list_boolean') {
-        $field_names[$field_name] = $field_name;
+        $boolean_names[$field_name] = $field_name;
+      }
+      if ($field_info['type'] == 'text') {
+        $text_names[$field_name] = $field_name;
       }
     }
     $form['fields']['muut_comments_enable_field'][$bundle] = array(
       '#type' => 'select',
-      '#options' => $field_names,
+      '#options' => $boolean_names,
       '#title' => t('Comment Field for @bundle', array('@bundle' => $bundle)),
       '#default_value' => (empty($default_values[$bundle]) ? '' : $default_values[$bundle]),
     );
     $form['fields']['muut_comments_enable_notify'][$bundle] = array(
       '#type' => 'select',
-      '#options' => $field_names,
-      '#title' => t('Notify field for @bundle', array('@bundle' => $bundle)),
+      '#options' => $text_names,
+      '#title' => t('Notify author field for @bundle', array('@bundle' => $bundle)),
       '#default_value' => (empty($notify_values[$bundle]) ? '' : $notify_values[$bundle]),
     );
   }
@@ -120,7 +124,7 @@ function muut_comments_config_form($form, &$form_state) {
     '#type' => 'textarea',
     '#title' => t('Mail subject'),
     '#default_value' => empty(variable_get('muut_comments_notification_body')) ? '' : variable_get('muut_comments_notification_body'),
-    '#description' => '@authorname is replaced by Authors name <br> @nodetitle is replaced by nodes title <br> @nodelink is replace with the nodes title as a link ',
+    '#description' => '@nodetitle is replaced by nodes title <br> @nodelink is replace with the nodes title as a link ',
   );
   return system_settings_form($form);
 }
