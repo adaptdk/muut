@@ -32,9 +32,25 @@ function muut_comments_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
+  $items['muut-comments/notify'] = array(
+    'title' => 'Muut Comments notify',
+    'type' => MENU_CALLBACK,
+    'description' => 'Callback for new Muut comments.',
+    'page callback' => 'muut_comments_notify_callback',
+    'access callback' => 'muut_comments_notify_access_callback',
+  );
+
   return $items;
 }
 
+function muut_comments_notify_access_callback(){
+
+  $hash = $_SERVER['HTTP_X_MUUT_SIGNATURE'];
+  $message = file_get_contents("php://input");
+  $key = variable_get('muut_comments_webhook_secret', 'uri9p32iojfi902');
+  $signature = hash_hmac('sha1', $message, $key);
+  return $signature == $hash;
+}
 /**
  * Custom ajax callback for muut comments.
  *
@@ -274,4 +290,68 @@ function muut_comments_views_api() {
     'api' => 3,
     'path' => drupal_get_path('module', 'muut_comments') . '/includes/views',
   );
+}
+
+/**
+ * Muut webhook callback function that handles if notifications should be sent.
+ */
+function muut_comments_notify_callback() {
+
+  $received = json_decode(file_get_contents("php://input"));
+  $exp_string = explode('#', $received[1]);
+  $node_id = $exp_string[1];
+  $node = node_load($node_id);
+  $node_wrapper = entity_metadata_wrapper('node', $node);
+
+  $node_bundle = $node_wrapper->getBundle();
+  $notify_fields = variable_get('muut_comments_enable_notify');
+  $field = $notify_fields[$node_bundle];
+  if (!empty($node_wrapper->{$field}->value())) {
+    $authors_emails = explode(',', $node_wrapper->{$field}->value());
+
+    $subject = variable_get('muut_comments_notification_subject');
+    $body = variable_get('muut_comments_notification_body');
+    foreach ($authors_emails as $author_email) {
+      $email = str_replace(' ', '', $author_email);
+      if (valid_email_address($email)) {
+        try {
+          $replacements = array(
+            '@nodetitle' => $node_wrapper->title->value(),
+            '@nodelink' => l($node_wrapper->title->value(), $GLOBALS['base_url'] . '/' . drupal_get_path_alias('node/' . $node_id)),
+          );
+          $params = array(
+            'subject' => $subject,
+            'body' => $body,
+            'replacements' => $replacements,
+          );
+          muut_comments_mail_send($author_email, $params);
+        } catch (Exception $ex) {
+          watchdog('muut_comments', $ex->getMessage(), WATCHDOG_ERROR);
+        }
+      }
+    }
+  }
+  return drupal_json_output('OK');
+}
+
+/**
+ * Function for sending notification emails to users.
+ */
+function muut_comments_mail_send($to, $params) {
+  if ($to) {
+    drupal_mail('muut_comments', 'muut_notification', $to, 'da', array('account' => $to, 'params' => $params));
+  }
+}
+
+/**
+ * Implements hook_mail().
+ */
+function muut_comments_mail($key, &$message, $params) {
+  if ($key == 'muut_notification') {
+    $message['subject'] = str_replace(array_keys($params['params']['replacements']), array_values($params['params']['replacements']), $params['params']['subject']);
+    // Each element of the body array becomes a new line in the email.
+    // Adding an empty string to the body array adds an extra line in the email.
+    $message['body'][] = '';
+    $message['body'][] = str_replace(array_keys($params['params']['replacements']), array_values($params['params']['replacements']), $params['params']['body']);
+  }
 }
