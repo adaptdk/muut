@@ -47,7 +47,7 @@ function muut_comments_notify_access_callback(){
 
   $hash = $_SERVER['HTTP_X_MUUT_SIGNATURE'];
   $message = file_get_contents("php://input");
-  $key = variable_get('muut_comments_webhook_secret', 'uri9p32iojfi902');
+  $key = variable_get('muut_comments_webhook_secret', '');
   $signature = hash_hmac('sha1', $message, $key);
   return $signature == $hash;
 }
