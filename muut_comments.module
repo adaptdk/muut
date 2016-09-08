@@ -229,6 +229,13 @@ function muut_comments_block_view($delta = '') {
     $community_name = variable_get('muut_comments_community_name', '');
 
     if ($delta == 'comments') {
+
+      if (path_is_admin(current_path())) {
+        $block['title'] = 'Muut kommentarer for siden';
+        $block['content'] = '';
+        return $block;
+      }
+
       $js_settings = array(
         'data' => array(
           'muut_comments' => array(
