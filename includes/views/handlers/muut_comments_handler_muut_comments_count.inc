@@ -11,6 +11,17 @@
  */
 class muut_comments_handler_muut_comments_count extends views_handler_field {
 
+  function construct() {
+    parent::construct();
+
+    // Add nid as an additional field. This is a requirement for loading the
+    // comments but might not always be available to us.
+    $this->additional_fields['nid'] = array(
+      'table' => 'node',
+      'field' => 'nid',
+    );
+  }
+
   function option_definition() {
     $options = parent::option_definition();
     return $options;
@@ -19,18 +30,23 @@ class muut_comments_handler_muut_comments_count extends views_handler_field {
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
   }
-  
+
   function query() {
-    // do nothing -- to override the parent query.
+    // Load additional fields.
+    $this->ensure_my_table();
+    $this->add_additional_fields();
   }
 
   function render($data) {
 
     $output = '';
 
-    $node = node_load($data->nid);
+    // Get nid via get_value, don't just count on it being there in $data.
+    $nid = $this->get_value($data, 'nid');
+
+    $node = node_load($nid);
     $groups = og_get_entity_groups('node', $node);
-    
+
     $comment_ids = array();
     if (!empty($groups['node'])) {
       foreach($groups['node'] as $group) {
@@ -49,7 +65,7 @@ class muut_comments_handler_muut_comments_count extends views_handler_field {
     }
 
     return $output;
-    
+
   }
 
 }
